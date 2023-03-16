@@ -1,0 +1,263 @@
+@inproceedings{lv-etal-2022-pre,
+    title = "Do Pre-trained Models Benefit Knowledge Graph Completion? A Reliable Evaluation and a Reasonable Approach",
+    author = "Lv, Xin  and
+      Lin, Yankai  and
+      Cao, Yixin  and
+      Hou, Lei  and
+      Li, Juanzi  and
+      Liu, Zhiyuan  and
+      Li, Peng  and
+      Zhou, Jie",
+    booktitle = "Findings of the Association for Computational Linguistics: ACL 2022",
+    month = may,
+    year = "2022",
+    address = "Dublin, Ireland",
+    publisher = "Association for Computational Linguistics",
+    url = "https://aclanthology.org/2022.findings-acl.282",
+    doi = "10.18653/v1/2022.findings-acl.282",
+    pages = "3570--3581",
+    abstract = "In recent years, pre-trained language models (PLMs) have been shown to capture factual knowledge from massive texts, which encourages the proposal of PLM-based knowledge graph completion (KGC) models. However, these models are still quite behind the SOTA KGC models in terms of performance. In this work, we find two main reasons for the weak performance: (1) Inaccurate evaluation setting. The evaluation setting under the closed-world assumption (CWA) may underestimate the PLM-based KGC models since they introduce more external knowledge; (2) Inappropriate utilization of PLMs. Most PLM-based KGC models simply splice the labels of entities and relations as inputs, leading to incoherent sentences that do not take full advantage of the implicit knowledge in PLMs. To alleviate these problems, we highlight a more accurate evaluation setting under the open-world assumption (OWA), which manual checks the correctness of knowledge that is not in KGs. Moreover, motivated by prompt tuning, we propose a novel PLM-based KGC model named PKGC. The basic idea is to convert each triple and its support information into natural prompt sentences, which is further fed into PLMs for classification. Experiment results on two KGC datasets demonstrate OWA is more reliable for evaluating KGC, especially on the link prediction, and the effectiveness of our PKCG model on both CWA and OWA settings.",
+}
+
+@article{DBLP:journals/corr/abs-1910-03771,
+  author    = {Thomas Wolf and
+               Lysandre Debut and
+               Victor Sanh and
+               Julien Chaumond and
+               Clement Delangue and
+               Anthony Moi and
+               Pierric Cistac and
+               Tim Rault and
+               R{\'{e}}mi Louf and
+               Morgan Funtowicz and
+               Jamie Brew},
+  title     = {HuggingFace's Transformers: State-of-the-art Natural Language Processing},
+  journal   = {CoRR},
+  volume    = {abs/1910.03771},
+  year      = {2019},
+  url       = {http://arxiv.org/abs/1910.03771},
+  eprinttype = {arXiv},
+  eprint    = {1910.03771},
+  timestamp = {Tue, 02 Jun 2020 12:49:01 +0200},
+  biburl    = {https://dblp.org/rec/journals/corr/abs-1910-03771.bib},
+  bibsource = {dblp computer science bibliography, https://dblp.org}
+}
+
+@inproceedings{devlin-etal-2019-bert,
+    title = "{BERT}: Pre-training of Deep Bidirectional Transformers for Language Understanding",
+    author = "Devlin, Jacob  and
+      Chang, Ming-Wei  and
+      Lee, Kenton  and
+      Toutanova, Kristina",
+    booktitle = "Proceedings of the 2019 Conference of the North {A}merican Chapter of the Association for Computational Linguistics: Human Language Technologies, Volume 1 (Long and Short Papers)",
+    month = jun,
+    year = "2019",
+    address = "Minneapolis, Minnesota",
+    publisher = "Association for Computational Linguistics",
+    url = "https://aclanthology.org/N19-1423",
+    doi = "10.18653/v1/N19-1423",
+    pages = "4171--4186",
+    abstract = "We introduce a new language representation model called BERT, which stands for Bidirectional Encoder Representations from Transformers. Unlike recent language representation models (Peters et al., 2018a; Radford et al., 2018), BERT is designed to pre-train deep bidirectional representations from unlabeled text by jointly conditioning on both left and right context in all layers. As a result, the pre-trained BERT model can be fine-tuned with just one additional output layer to create state-of-the-art models for a wide range of tasks, such as question answering and language inference, without substantial task-specific architecture modifications. BERT is conceptually simple and empirically powerful. It obtains new state-of-the-art results on eleven natural language processing tasks, including pushing the GLUE score to 80.5 (7.7 point absolute improvement), MultiNLI accuracy to 86.7{\%} (4.6{\%} absolute improvement), SQuAD v1.1 question answering Test F1 to 93.2 (1.5 point absolute improvement) and SQuAD v2.0 Test F1 to 83.1 (5.1 point absolute improvement).",
+}
+
+@misc{https://doi.org/10.48550/arxiv.1909.03193,
+  doi = {10.48550/ARXIV.1909.03193},
+
+  url = {https://arxiv.org/abs/1909.03193},
+
+  author = {Yao, Liang and Mao, Chengsheng and Luo, Yuan},
+
+  keywords = {Computation and Language (cs.CL), Artificial Intelligence (cs.AI), FOS: Computer and information sciences, FOS: Computer and information sciences},
+
+  title = {KG-BERT: BERT for Knowledge Graph Completion},
+
+  publisher = {arXiv},
+
+  year = {2019},
+
+  copyright = {arXiv.org perpetual, non-exclusive license}
+}
+
+@article{DBLP:journals/corr/abs-1812-10315,
+  author    = {Milan Dojchinovski and
+               Julio Hernandez and
+               Markus Ackermann and
+               Amit Kirschenbaum and
+               Sebastian Hellmann},
+  title     = {DBpedia {NIF:} Open, Large-Scale and Multilingual Knowledge Extraction
+               Corpus},
+  journal   = {CoRR},
+  volume    = {abs/1812.10315},
+  year      = {2018},
+  url       = {http://arxiv.org/abs/1812.10315},
+  eprinttype = {arXiv},
+  eprint    = {1812.10315},
+  timestamp = {Mon, 20 Sep 2021 08:52:46 +0200},
+  biburl    = {https://dblp.org/rec/journals/corr/abs-1812-10315.bib},
+  bibsource = {dblp computer science bibliography, https://dblp.org}
+}
+
+@misc{https://doi.org/10.48550/arxiv.2206.14268,
+  doi = {10.48550/ARXIV.2206.14268},
+
+  url = {https://arxiv.org/abs/2206.14268},
+
+  author = {Hao, Shibo and Tan, Bowen and Tang, Kaiwen and Ni, Bin and Zhang, Hengzhe and Xing, Eric P and Hu, Zhiting},
+
+  keywords = {Computation and Language (cs.CL), FOS: Computer and information sciences, FOS: Computer and information sciences},
+
+  title = {BertNet: Harvesting Knowledge Graphs from Pretrained Language Models},
+
+  publisher = {arXiv},
+
+  year = {2022},
+
+  copyright = {arXiv.org perpetual, non-exclusive license}
+}
+
+@misc{https://doi.org/10.48550/arxiv.2107.07842,
+  doi = {10.48550/ARXIV.2107.07842},
+
+  url = {https://arxiv.org/abs/2107.07842},
+
+  author = {Choudhary, Shivani and Luthra, Tarun and Mittal, Ashima and Singh, Rajat},
+
+  keywords = {Information Retrieval (cs.IR), Artificial Intelligence (cs.AI), FOS: Computer and information sciences, FOS: Computer and information sciences},
+
+  title = {A Survey of Knowledge Graph Embedding and Their Applications},
+
+  publisher = {arXiv},
+
+  year = {2021},
+
+  copyright = {Creative Commons Attribution 4.0 International}
+}
+
+@misc{https://doi.org/10.48550/arxiv.2106.01623,
+  doi = {10.48550/ARXIV.2106.01623},
+
+  url = {https://arxiv.org/abs/2106.01623},
+
+  author = {Li, Junyi and Tang, Tianyi and Zhao, Wayne Xin and Wei, Zhicheng and Yuan, Nicholas Jing and Wen, Ji-Rong},
+
+  keywords = {Computation and Language (cs.CL), FOS: Computer and information sciences, FOS: Computer and information sciences},
+
+  title = {Few-shot Knowledge Graph-to-Text Generation with Pretrained Language Models},
+
+  publisher = {arXiv},
+
+  year = {2021},
+
+  copyright = {arXiv.org perpetual, non-exclusive license}
+}
+
+@misc{https://doi.org/10.48550/arxiv.1907.11692,
+  doi = {10.48550/ARXIV.1907.11692},
+
+  url = {https://arxiv.org/abs/1907.11692},
+
+  author = {Liu, Yinhan and Ott, Myle and Goyal, Naman and Du, Jingfei and Joshi, Mandar and Chen, Danqi and Levy, Omer and Lewis, Mike and Zettlemoyer, Luke and Stoyanov, Veselin},
+
+  keywords = {Computation and Language (cs.CL), FOS: Computer and information sciences, FOS: Computer and information sciences},
+
+  title = {RoBERTa: A Robustly Optimized BERT Pretraining Approach},
+
+  publisher = {arXiv},
+
+  year = {2019},
+
+  copyright = {arXiv.org perpetual, non-exclusive license}
+}
+
+@article{bush1945we,
+  title={As we may think},
+  author={Bush, Vannevar and others},
+  journal={The atlantic monthly},
+  volume={176},
+  number={1},
+  pages={101--108},
+  year={1945}
+}
+
+@inproceedings{10.1145/1376616.1376746,
+author = {Bollacker, Kurt and Evans, Colin and Paritosh, Praveen and Sturge, Tim and Taylor, Jamie},
+title = {Freebase: A Collaboratively Created Graph Database for Structuring Human Knowledge},
+year = {2008},
+isbn = {9781605581026},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/1376616.1376746},
+doi = {10.1145/1376616.1376746},
+abstract = {Freebase is a practical, scalable tuple database used to structure general human knowledge. The data in Freebase is collaboratively created, structured, and maintained. Freebase currently contains more than 125,000,000 tuples, more than 4000 types, and more than 7000 properties. Public read/write access to Freebase is allowed through an HTTP-based graph-query API using the Metaweb Query Language (MQL) as a data query and manipulation language. MQL provides an easy-to-use object-oriented interface to the tuple data in Freebase and is designed to facilitate the creation of collaborative, Web-based data-oriented applications.},
+booktitle = {Proceedings of the 2008 ACM SIGMOD International Conference on Management of Data},
+pages = {1247–1250},
+numpages = {4},
+keywords = {semantic network, tuple store, collaborative systems},
+location = {Vancouver, Canada},
+series = {SIGMOD '08}
+}
+
+@article{DBLP:journals/corr/abs-1907-09657,
+  author    = {Junyang Gao and
+               Xian Li and
+               Yifan Ethan Xu and
+               Bunyamin Sisman and
+               Xin Luna Dong and
+               Jun Yang},
+  title     = {Efficient Knowledge Graph Accuracy Evaluation},
+  journal   = {CoRR},
+  volume    = {abs/1907.09657},
+  year      = {2019},
+  url       = {http://arxiv.org/abs/1907.09657},
+  eprinttype = {arXiv},
+  eprint    = {1907.09657},
+  timestamp = {Mon, 05 Jul 2021 13:48:35 +0200},
+  biburl    = {https://dblp.org/rec/journals/corr/abs-1907-09657.bib},
+  bibsource = {dblp computer science bibliography, https://dblp.org}
+}
+
+@article{https://doi.org/10.48550/arxiv.1612.03975,
+  doi = {10.48550/ARXIV.1612.03975},
+
+  url = {https://arxiv.org/abs/1612.03975},
+
+  author = {Speer, Robyn and Chin, Joshua and Havasi, Catherine},
+
+  keywords = {Computation and Language (cs.CL), FOS: Computer and information sciences, FOS: Computer and information sciences, I.2.7},
+
+  title = {ConceptNet 5.5: An Open Multilingual Graph of General Knowledge},
+
+  publisher = {arXiv},
+
+  year = {2016},
+
+  copyright = {arXiv.org perpetual, non-exclusive license}
+}
+
+@inproceedings{10.5555/2999611.2999715,
+author = {Socher, Richard and Chen, Danqi and Manning, Christopher D. and Ng, Andrew Y.},
+title = {Reasoning with Neural Tensor Networks for Knowledge Base Completion},
+year = {2013},
+publisher = {Curran Associates Inc.},
+address = {Red Hook, NY, USA},
+abstract = {Knowledge bases are an important resource for question answering and other tasks but often suffer from incompleteness and lack of ability to reason over their discrete entities and relationships. In this paper we introduce an expressive neural tensor network suitable for reasoning over relationships between two entities. Previous work represented entities as either discrete atomic units or with a single entity vector representation. We show that performance can be improved when entities are represented as an average of their constituting word vectors. This allows sharing of statistical strength between, for instance, facts involving the "Sumatran tiger" and "Bengal tiger." Lastly, we demonstrate that all models improve when these word vectors are initialized with vectors learned from unsupervised large corpora. We assess the model by considering the problem of predicting additional true relations between entities given a subset of the knowledge base. Our model outperforms previous models and can classify unseen relationships in WordNet and FreeBase with an accuracy of 86.2% and 90.0%, respectively.},
+booktitle = {Proceedings of the 26th International Conference on Neural Information Processing Systems - Volume 1},
+pages = {926–934},
+numpages = {9},
+location = {Lake Tahoe, Nevada},
+series = {NIPS'13}
+}
+
+@inproceedings{10.5555/2999792.2999923,
+author = {Bordes, Antoine and Usunier, Nicolas and Garcia-Dur\'{a}n, Alberto and Weston, Jason and Yakhnenko, Oksana},
+title = {Translating Embeddings for Modeling Multi-Relational Data},
+year = {2013},
+publisher = {Curran Associates Inc.},
+address = {Red Hook, NY, USA},
+abstract = {We consider the problem of embedding entities and relationships of multi-relational data in low-dimensional vector spaces. Our objective is to propose a canonical model which is easy to train, contains a reduced number of parameters and can scale up to very large databases. Hence, we propose TransE, a method which models relationships by interpreting them as translations operating on the low-dimensional embeddings of the entities. Despite its simplicity, this assumption proves to be powerful since extensive experiments show that TransE significantly outperforms state-of-the-art methods in link prediction on two knowledge bases. Besides, it can be successfully trained on a large scale data set with 1M entities, 25k relationships and more than 17M training samples.},
+booktitle = {Proceedings of the 26th International Conference on Neural Information Processing Systems - Volume 2},
+pages = {2787–2795},
+numpages = {9},
+location = {Lake Tahoe, Nevada},
+series = {NIPS'13}
+}
