@@ -16,8 +16,8 @@ struct InputRow {
 }
 
 fn main() {
-    let file_path = "data/YAGO3-10/train.tsv";
-    let output_path = Path::new("output/train_importance_scores.tsv");
+    let file_path = "data/YAGO3-10/dev.tsv";
+    let output_path = Path::new("output/dev_importance_scores.tsv");
     let output_file = Arc::new(Mutex::new(File::create(output_path).unwrap()));
 
     let mut reader = ReaderBuilder::new()
