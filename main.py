@@ -12,7 +12,8 @@ def power_decay(index, decay_factor):
 class TripleImportanceDataset(Dataset):
     def __init__(self, tsv_file, relation2text_file, tokenizer):
         self.df = pd.read_csv(tsv_file, sep='\t', header=None, names=['head', 'relation', 'tail', 'index', 'char-index'])
-        self.df = self.df[(self.df['index'] != -1) & (self.df['index'] != -2)]
+        self.df = self.df[self.df['char-index'] != -1]
+        #self.df = self.df[(self.df['index'] != -1) & (self.df['index'] != -2)]
         # print(self.df['importance'].mean())
         self.relation2text = pd.read_csv(relation2text_file, sep='\t', header=None, names=['relation', 'text']).set_index('relation')['text'].to_dict()
         self.tokenizer = tokenizer
@@ -24,7 +25,7 @@ class TripleImportanceDataset(Dataset):
         triple = self.df.iloc[idx]
         text = f"{triple['head']} {self.relation2text[triple['relation']]} {triple['tail']}"
         encoding = self.tokenizer(text, return_tensors='pt', padding='max_length', truncation=True, max_length=128)
-        importance = power_decay(triple['index'], 0.95)
+        importance = power_decay(triple['char-index'], 0.999)
         return encoding['input_ids'].squeeze(), encoding['attention_mask'].squeeze(), importance
 
     def text(self, idx):
