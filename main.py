@@ -10,7 +10,6 @@ class TripleImportanceDataset(Dataset):
     def __init__(self, tsv_file, relation2text_file, tokenizer):
         self.df = pd.read_csv(tsv_file, sep='\t', header=None, names=['head', 'relation', 'tail', 'importance'])
         self.df = self.df[(self.df['importance'] != -1) & (self.df['importance'] != -2)]
-        self.df = self.df[:3000]
         # print(self.df['importance'].mean())
         self.relation2text = pd.read_csv(relation2text_file, sep='\t', header=None, names=['relation', 'text']).set_index('relation')['text'].to_dict()
         self.tokenizer = tokenizer
@@ -66,7 +65,7 @@ def main():
     # Load data
     tokenizer = DistilBertTokenizerFast.from_pretrained('distilbert-base-uncased')
     relation2text_file = 'preprocess-rust/data/YAGO3-10/relation2text.txt'
-    train_tsv_file = 'preprocess-rust/output/train_sample_importance_scores.tsv'
+    train_tsv_file = 'preprocess-rust/output/train_importance_scores.tsv'
     test_tsv_file = 'preprocess-rust/output/test_importance_scores.tsv'
     dev_tsv_file = 'preprocess-rust/output/dev_importance_scores.tsv'
 
@@ -93,7 +92,7 @@ def main():
     print(test_loss)
 
     predictions = predict(model, dev_loader, device)
-    print("Predictions:", predictions)
+    # print("Predictions:", predictions)
 
     # Save the fine-tuned model
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")

@@ -2,7 +2,7 @@ use csv::ReaderBuilder;
 use indicatif::{ProgressBar, ProgressStyle};
 use reqwest::{blocking::Client, Url};
 use markup5ever::interface::tree_builder::TreeSink;
-use scraper::{Html, Selector, ElementRef};
+use scraper::{Html, Selector};
 use std::{fs::File, io::Write, path::Path};
 use serde_derive::Deserialize;
 use std::collections::HashMap;
@@ -17,8 +17,8 @@ struct InputRow {
 }
 
 fn main() {
-    let file_path = "data/YAGO3-10/test.tsv";
-    let output_path = Path::new("output/test_indices.tsv");
+    let file_path = "data/YAGO3-10/train.tsv";
+    let output_path = Path::new("output/train_indices.tsv");
     let output_file = Arc::new(Mutex::new(File::create(output_path).unwrap()));
 
     let mut reader = ReaderBuilder::new()
@@ -88,68 +88,66 @@ fn fetch_wikipedia_page(head: &str) -> Result<String, Box<dyn std::error::Error 
 
 fn remove_aux(document: &mut Html) {
     let sections_to_remove = [
+        "style",
+        "link",
         ".infobox",
+        ".shortdescription",
+        ".sidebar",
         "#References",
+        ".hatnote",
         "#External_links",
         "#Further_reading",
     ];
 
     for section in &sections_to_remove {
         let selector = Selector::parse(section).unwrap();
-        let element = document.select(&selector).next();
-        if let Some(element) = element {
+        for element in document.clone().select(&selector) {
             document.remove_from_parent(&element.id());
         }
     }
 }
 
-fn get_links_and_indices(document: &Html) -> Vec<(ElementRef, usize)> {
+fn get_links_and_indices(document: &Html) -> Vec<(String, usize)> {
     let mw_parser_output_selector = Selector::parse("div#mw-content-text").unwrap();
     let a_selector = Selector::parse("a").unwrap();
     let mw_parser_output = document.select(&mw_parser_output_selector).next().unwrap();
-    let links = mw_parser_output.select(&a_selector).collect::<Vec<_>>();
 
-    let mut links_indices = Vec::new();
-    let mut char_index = 0;
+    let document_text = mw_parser_output.text().collect::<String>();
+    let mut links_and_indices = Vec::new();
 
-    for node in mw_parser_output.children() {
-        if node.value().is_text() {
-            let node_text = node.value().as_text().unwrap();
-            char_index += node_text.chars().count();
-        }
-
-        if let Some(link) = links.iter().find(|&&l| l.id() == node.id()) {
-            links_indices.push((*link, char_index));
+    for a_element in mw_parser_output.select(&a_selector) {
+        if let Some(href) = a_element.value().attr("href") {
+            if href.starts_with("/wiki/") && !href.contains(':') {
+                let link_str = &href[6..];
+                let link_text = a_element.text().collect::<String>();
+                if let Some(index) = document_text.find(&link_text) {
+                    links_and_indices.push((link_str.to_string(), index));
+                }
+            }
         }
     }
 
-    links_indices
+    links_and_indices
 }
 
 fn process_link_and_batch(
-    link: ElementRef,
+    link_str: &str,
     link_char_index: usize,
     batch: &mut Vec<InputRow>,
     output_file: &Mutex<File>,
     index: &mut i32,
 ) {
-    if let Some(href) = link.value().attr("href") {
-        if href.starts_with("/wiki/") && !href.contains(':') {
-            let link_str = &href[6..];
-
-            if let Some(row_pos) = batch.iter().position(|row| row.tail == link_str) {
-                let row = batch.remove(row_pos);
-                let mut file = output_file.lock().unwrap();
-                writeln!(
-                    file,
-                    "{}\t{}\t{}\t{}\t{}",
-                    row.head, row.relation, row.tail, *index, link_char_index
-                )
-                .unwrap();
-            }
-            *index += 1;
-        }
+    if let Some(row_pos) = batch.iter().position(|row| row.tail == link_str) {
+        let row = batch.remove(row_pos);
+        let mut file = output_file.lock().unwrap();
+        writeln!(
+            file,
+            "{}\t{}\t{}\t{}\t{}",
+            row.head, row.relation, row.tail, *index, link_char_index
+        )
+        .unwrap();
     }
+    *index += 1;
 }
 
 fn write_remaining_batch(batch: &[InputRow], output_file: &Mutex<File>, index: i32) {
@@ -169,8 +167,8 @@ fn process_batch(head: &str, batch: &[InputRow], output_file: &Mutex<File>, pb: 
             let mut batch = batch.to_vec();
             let mut index: i32 = 0;
 
-            for (link, link_char_index) in links_indices {
-                process_link_and_batch(link, link_char_index, &mut batch, output_file, &mut index);
+            for (link_str, link_char_index) in links_indices {
+                process_link_and_batch(&link_str, link_char_index, &mut batch, output_file, &mut index);
                 if batch.is_empty() {
                     break;
                 }

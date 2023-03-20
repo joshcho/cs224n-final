@@ -14,3 +14,4 @@ tokio = { version = "1", features = ["full"] }
 futures = "0.3"
 rayon = "1.5.1"
 markup5ever = "0.10.1"
+ego-tree = "0.6.2"

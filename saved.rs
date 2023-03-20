@@ -158,3 +158,28 @@ fn main() {
         eprintln!("Error: {}", e);
     }
 }
+
+fn test_first_link_char_index() {
+    let head = "Kang_Chul"; // Replace with any desired article name.
+
+    match fetch_wikipedia_page(&head) {
+        Ok(html) => {
+            let mut document = Html::parse_document(&html);
+            remove_aux(&mut document);
+            let links_indices = get_links_and_indices(&document);
+
+            if let Some((link_str, link_char_index)) = links_indices.get(0) {
+                println!("First link: {}, index: {}", link_str, link_char_index);
+            } else {
+                println!("No links found in the article.");
+            }
+        }
+        Err(e) => {
+            eprintln!("Error fetching Wikipedia page: {:?}", e);
+        }
+    }
+}
+
+fn main() {
+    test_first_link_char_index();
+}
