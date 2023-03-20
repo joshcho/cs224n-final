@@ -2,6 +2,7 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 from transformers import DistilBertForSequenceClassification, DistilBertTokenizerFast, AdamW
 import pandas as pd
+from tqdm import tqdm
 
 class TripleImportanceDataset(Dataset):
     def __init__(self, tsv_file, relation2text_file, tokenizer):
@@ -21,10 +22,10 @@ class TripleImportanceDataset(Dataset):
 def train(model, loader, device, optimizer):
     model.train()
     total_loss = 0
-    for batch in loader:
+    for batch in tqdm(loader, desc="Training"):
         input_ids = batch['input_ids'].to(device)
         attention_mask = batch['attention_mask'].to(device)
-        labels = batch['importance'].to(device)
+        labels = batch['importance'].to(device, dtype=torch.float32)
         optimizer.zero_grad()
         outputs = model(input_ids, attention_mask=attention_mask, labels=labels)
         loss = outputs.loss
@@ -34,8 +35,8 @@ def train(model, loader, device, optimizer):
     return total_loss / len(loader)
 
 def main():
-    tsv_file = 'output/train_importance_scores.tsv'
-    relation2text_file = 'data/YAGO3-10/relation2text.txt'
+    tsv_file = 'preprocess-rust/output/train_importance_scores.tsv'
+    relation2text_file = 'preprocess-rust/data/YAGO3-10/relation2text.txt'
     tokenizer = DistilBertTokenizerFast.from_pretrained('distilbert-base-uncased')
     dataset = TripleImportanceDataset(tsv_file, relation2text_file, tokenizer)
     loader = DataLoader(dataset, batch_size=16, shuffle=True)
