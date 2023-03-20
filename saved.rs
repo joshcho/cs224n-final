@@ -133,3 +133,28 @@ async fn process_batch(head: &str, batch: &[InputRow], output_file: &Mutex<File>
 
     Ok(())
 }
+
+fn print_links_without_infobox(head: &str) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let html = fetch_wikipedia_page(head)?;
+    let mut document = Html::parse_document(&html);
+    remove_infobox_and_references(&mut document);
+    let links = get_links(&document);
+    println!("{html}");
+
+    for link in links {
+        if let Some(href) = link.value().attr("href") {
+            if href.starts_with("/wiki/") && !href.contains(':') {
+                println!("{}", &href[6..]);
+            }
+        }
+    }
+
+    Ok(())
+}
+
+fn main() {
+    println!("Hello");
+    if let Err(e) = print_links_without_infobox("Michel_Foucault") {
+        eprintln!("Error: {}", e);
+    }
+}

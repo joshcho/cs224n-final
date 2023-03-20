@@ -1,7 +1,8 @@
 use csv::ReaderBuilder;
 use indicatif::{ProgressBar, ProgressStyle};
 use reqwest::{blocking::Client, Url};
-use scraper::{Html, Selector};
+use markup5ever::interface::tree_builder::TreeSink;
+use scraper::{Html, Selector, ElementRef};
 use std::{fs::File, io::Write, path::Path};
 use serde_derive::Deserialize;
 use std::collections::HashMap;
@@ -16,8 +17,8 @@ struct InputRow {
 }
 
 fn main() {
-    let file_path = "data/YAGO3-10/dev.tsv";
-    let output_path = Path::new("output/dev_importance_scores.tsv");
+    let file_path = "data/YAGO3-10/test.tsv";
+    let output_path = Path::new("output/test_indices.tsv");
     let output_file = Arc::new(Mutex::new(File::create(output_path).unwrap()));
 
     let mut reader = ReaderBuilder::new()
@@ -67,7 +68,7 @@ fn main() {
     pb.finish_with_message("Finished processing batches.");
 }
 
-fn process_batch(head: &str, batch: &[InputRow], output_file: &Mutex<File>, pb: Arc<Mutex<ProgressBar>>) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+fn fetch_wikipedia_page(head: &str) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     let client = Client::new();
     let base_url = "https://en.wikipedia.org/wiki/";
     let full_url = base_url.to_string() + &head.replace(" ", "_");
@@ -76,47 +77,109 @@ fn process_batch(head: &str, batch: &[InputRow], output_file: &Mutex<File>, pb: 
 
     if resp.status().is_success() {
         let html = resp.text().map_err(|e| Box::new(e) as Box<dyn std::error::Error + Send + Sync>)?;
-        let document = Html::parse_document(&html);
-        let selector = Selector::parse("div#mw-content-text a").unwrap();
-        let links = document.select(&selector);
+        Ok(html)
+    } else {
+        Err(Box::new(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            "Failed to fetch Wikipedia page",
+        )))
+    }
+}
 
-        let mut preprocessed_links: Vec<String> = Vec::new();
-        for link in links {
-            if let Some(href) = link.value().attr("href") {
-                if href.starts_with("/wiki/") && !href.contains(':') {
-                    preprocessed_links.push(href[6..].to_string());
-                }
-            }
+fn remove_aux(document: &mut Html) {
+    let sections_to_remove = [
+        ".infobox",
+        "#References",
+        "#External_links",
+        "#Further_reading",
+    ];
+
+    for section in &sections_to_remove {
+        let selector = Selector::parse(section).unwrap();
+        let element = document.select(&selector).next();
+        if let Some(element) = element {
+            document.remove_from_parent(&element.id());
+        }
+    }
+}
+
+fn get_links_and_indices(document: &Html) -> Vec<(ElementRef, usize)> {
+    let mw_parser_output_selector = Selector::parse("div#mw-content-text").unwrap();
+    let a_selector = Selector::parse("a").unwrap();
+    let mw_parser_output = document.select(&mw_parser_output_selector).next().unwrap();
+    let links = mw_parser_output.select(&a_selector).collect::<Vec<_>>();
+
+    let mut links_indices = Vec::new();
+    let mut char_index = 0;
+
+    for node in mw_parser_output.children() {
+        if node.value().is_text() {
+            let node_text = node.value().as_text().unwrap();
+            char_index += node_text.chars().count();
         }
 
-        for row in batch {
-            let mut pos = 0;
-            let mut found = false;
-            for (index, link) in preprocessed_links.iter().enumerate() {
-                if link == &row.tail {
-                    pos = index;
-                    found = true;
+        if let Some(link) = links.iter().find(|&&l| l.id() == node.id()) {
+            links_indices.push((*link, char_index));
+        }
+    }
+
+    links_indices
+}
+
+fn process_link_and_batch(
+    link: ElementRef,
+    link_char_index: usize,
+    batch: &mut Vec<InputRow>,
+    output_file: &Mutex<File>,
+    index: &mut i32,
+) {
+    if let Some(href) = link.value().attr("href") {
+        if href.starts_with("/wiki/") && !href.contains(':') {
+            let link_str = &href[6..];
+
+            if let Some(row_pos) = batch.iter().position(|row| row.tail == link_str) {
+                let row = batch.remove(row_pos);
+                let mut file = output_file.lock().unwrap();
+                writeln!(
+                    file,
+                    "{}\t{}\t{}\t{}\t{}",
+                    row.head, row.relation, row.tail, *index, link_char_index
+                )
+                .unwrap();
+            }
+            *index += 1;
+        }
+    }
+}
+
+fn write_remaining_batch(batch: &[InputRow], output_file: &Mutex<File>, index: i32) {
+    for row in batch {
+        let mut file = output_file.lock().unwrap();
+        writeln!(file, "{}\t{}\t{}\t{}\t{}", row.head, row.relation, row.tail, index, -1).unwrap();
+    }
+}
+
+fn process_batch(head: &str, batch: &[InputRow], output_file: &Mutex<File>, pb: Arc<Mutex<ProgressBar>>) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    match fetch_wikipedia_page(head) {
+        Ok(html) => {
+            let mut document = Html::parse_document(&html);
+            remove_aux(&mut document);
+            let links_indices = get_links_and_indices(&document);
+
+            let mut batch = batch.to_vec();
+            let mut index: i32 = 0;
+
+            for (link, link_char_index) in links_indices {
+                process_link_and_batch(link, link_char_index, &mut batch, output_file, &mut index);
+                if batch.is_empty() {
                     break;
                 }
             }
-            let score = if found {
-                0.95f32.powf(pos as f32)
-            } else {
-                -1.0
-            };
 
-            {
-                let mut file = output_file.lock().unwrap();
-                writeln!(file, "{}\t{}\t{}\t{}", row.head, row.relation, row.tail, score)?;
-            }
+            write_remaining_batch(&batch, output_file, -1);
         }
-    } else {
-        for row in batch {
-            let score = -2.0;
-            {
-                let mut file = output_file.lock().unwrap();
-                writeln!(file, "{}\t{}\t{}\t{}", row.head, row.relation, row.tail, score)?;
-            }
+        Err(_) => {
+            write_remaining_batch(&batch, output_file, -2);
         }
     }
 
