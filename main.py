@@ -1,6 +1,8 @@
 import torch
 from torch.utils.data import Dataset, DataLoader
-from transformers import DistilBertForSequenceClassification, DistilBertTokenizerFast, AdamW
+from transformers import (BertForSequenceClassification, BertTokenizerFast,
+                          DistilBertForSequenceClassification, DistilBertTokenizerFast,
+                          RobertaForSequenceClassification, RobertaTokenizerFast, AdamW)
 import pandas as pd
 from tqdm import tqdm
 import datetime
