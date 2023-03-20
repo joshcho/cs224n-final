@@ -6,10 +6,13 @@ from tqdm import tqdm
 import datetime
 import os
 
+def power_decay(index, decay_factor):
+    return decay_factor**index
+
 class TripleImportanceDataset(Dataset):
     def __init__(self, tsv_file, relation2text_file, tokenizer):
-        self.df = pd.read_csv(tsv_file, sep='\t', header=None, names=['head', 'relation', 'tail', 'importance'])
-        self.df = self.df[(self.df['importance'] != -1) & (self.df['importance'] != -2)]
+        self.df = pd.read_csv(tsv_file, sep='\t', header=None, names=['head', 'relation', 'tail', 'index', 'char-index'])
+        self.df = self.df[(self.df['index'] != -1) & (self.df['index'] != -2)]
         # print(self.df['importance'].mean())
         self.relation2text = pd.read_csv(relation2text_file, sep='\t', header=None, names=['relation', 'text']).set_index('relation')['text'].to_dict()
         self.tokenizer = tokenizer
@@ -21,7 +24,12 @@ class TripleImportanceDataset(Dataset):
         triple = self.df.iloc[idx]
         text = f"{triple['head']} {self.relation2text[triple['relation']]} {triple['tail']}"
         encoding = self.tokenizer(text, return_tensors='pt', padding='max_length', truncation=True, max_length=128)
-        return encoding['input_ids'].squeeze(), encoding['attention_mask'].squeeze(), triple['importance']
+        importance = power_decay(triple['index'], 0.95)
+        return encoding['input_ids'].squeeze(), encoding['attention_mask'].squeeze(), importance
+
+    def text(self, idx):
+        triple = self.df.iloc[idx]
+        return f"{triple['head']} {self.relation2text[triple['relation']]} {triple['tail']}"
 
 def train(model, loader, device, optimizer):
     model.train()
@@ -65,9 +73,9 @@ def main():
     # Load data
     tokenizer = DistilBertTokenizerFast.from_pretrained('distilbert-base-uncased')
     relation2text_file = 'preprocess-rust/data/YAGO3-10/relation2text.txt'
-    train_tsv_file = 'preprocess-rust/output/train_importance_scores.tsv'
-    test_tsv_file = 'preprocess-rust/output/test_importance_scores.tsv'
-    dev_tsv_file = 'preprocess-rust/output/dev_importance_scores.tsv'
+    train_tsv_file = 'preprocess-rust/output/train_indices.tsv'
+    test_tsv_file = 'preprocess-rust/output/test_indices.tsv'
+    dev_tsv_file = 'preprocess-rust/output/dev_indices.tsv'
 
     train_dataset = TripleImportanceDataset(train_tsv_file, relation2text_file, tokenizer)
     test_dataset = TripleImportanceDataset(test_tsv_file, relation2text_file, tokenizer)
@@ -88,12 +96,6 @@ def main():
         train_loss = train(model, train_loader, device, optimizer)
         print(f"Epoch {epoch + 1}/{epochs} - Loss: {train_loss:.4f}")
 
-    test_loss = evaluate(model, test_loader, device)
-    print(test_loss)
-
-    predictions = predict(model, dev_loader, device)
-    # print("Predictions:", predictions)
-
     # Save the fine-tuned model
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     save_directory = "finetuned_models"
@@ -101,6 +103,15 @@ def main():
     model_save_path = f"{save_directory}/finetuned_distilbert_{timestamp}.pt"
     torch.save(model.state_dict(), model_save_path)
     print(f"Model saved to {model_save_path}")
+
+    test_loss = evaluate(model, test_loader, device)
+    print("Test loss", test_loss)
+
+    predictions = predict(model, dev_loader, device)
+    for i in range(len(dev_dataset)):
+        print(dev_dataset.text(i), predictions[i])
+
+    # print("Predictions:", predictions)
 
 if __name__ == "__main__":
     main()
