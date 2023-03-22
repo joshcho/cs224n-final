@@ -23,9 +23,9 @@ def main(args):
     pretrained_model_name = get_pretrained_model_name(args.model)
     tokenizer = tokenizer_class.from_pretrained(pretrained_model_name)
     relation2text_file = 'preprocess-rust/data/YAGO3-10/relation2text.txt'
-    train_tsv_file = 'preprocess-rust/output/train_indices.tsv'
-    test_tsv_file = 'preprocess-rust/output/test_indices.tsv'
-    dev_tsv_file = 'preprocess-rust/output/dev_indices.tsv'
+    train_tsv_file = 'preprocess-rust/output/train_all_indices.tsv'
+    test_tsv_file = 'preprocess-rust/output/test_all_indices.tsv'
+    dev_tsv_file = 'preprocess-rust/output/dev_all_indices.tsv'
 
     models_to_train = []
     if args.wiki_no_infobox_train:
@@ -51,7 +51,7 @@ def main(args):
 
     importance_columns = {
         'wiki_no_infobox': 'index',
-        'wiki_with_infobox': 'index',
+        'wiki_with_infobox': 'index-with-infobox',
         'wiki_char_index': 'char-index'
     }
 

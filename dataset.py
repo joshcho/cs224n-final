@@ -23,8 +23,8 @@ class TripleDataset(Dataset):
 
 class TripleImportanceDataset(Dataset):
     def __init__(self, tsv_file, relation2text_file, tokenizer, decay_factor, importance_column):
-        self.df = pd.read_csv(tsv_file, sep='\t', header=None, names=['head', 'relation', 'tail', 'index', 'char-index'])
-        self.df = self.df[(self.df['index'] != -1) & (self.df['index'] != -2)]
+        self.df = pd.read_csv(tsv_file, sep='\t', header=None, names=['head', 'relation', 'tail', 'index', 'char-index', 'index-with-infobox'])
+        self.df = self.df[(self.df[importance_column] != -1) & (self.df[importance_column] != -2)]
         self.relation2text = pd.read_csv(relation2text_file, sep='\t', header=None, names=['relation', 'text']).set_index('relation')['text'].to_dict()
         self.tokenizer = tokenizer
         self.decay_factor = decay_factor
