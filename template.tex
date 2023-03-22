@@ -8,16 +8,19 @@
 \usepackage{url}
 \usepackage{booktabs}
 \usepackage{amsfonts}
+\usepackage{amsmath}
 \usepackage{nicefrac}
 \usepackage{microtype}
 \usepackage{graphicx}
+\graphicspath{ {./images/} }
+\usepackage{verbatim}
 \usepackage{xcolor}
 \usepackage{lipsum}
 
 \newcommand{\note}[1]{\textcolor{blue}{{#1}}}
 
 \title{
-  Weighted Knowledge Graph Completion using Pre-trained Language Models \\
+  IAKG: Importance-augmented Knowledge Graphs \\
   \vspace{1em}
   \small{\normalfont Stanford CS224N Custom Project}  % Select one and delete the other
 }
@@ -45,29 +48,117 @@
 \maketitle
 
 \begin{abstract}
-  Pre-trained Language Models (PLMs) demonstrate implicit understanding of domain knowledge. Knowledge graphs are explicit representations of domain knowledge. Since the rise of PLMs, there has been growing interest in rendering PLMs' implicit knowledge explicit via knowledge graphs. In domain knowledge, relations are often weighted, where there is strength in the relation. We build upon previous work to complete weighted knowledge graphs.
+  In recent years, Pre-trained Language Models (PLMs) have seen a meteoric rise, largely because through their training process, PLMs form a rich, implicit representation of domain knowledge. Yet its implicit nature makes knowledge inscrutable, which calls the need for explicit representations like Knowledge Graphs (KGs). KGs, while powerful in representing complex relationships between entities, do not capture priority between triples. In this paper, we propose a method for augmenting KGs with importance weights using Wikipedia as proxy for importance. As Wikipedia is limited as a dataset, we use PLMs to generalize the notion of importance from the Wikipedia dataset. We see importance-augmented knowledge graph as an important step in constructing richer explicit representations of knowledge.
 \end{abstract}
 
-\section{Motivation for Preprocessing}
+\section{Background}
+Knowledge graphs (KGs) are a popular and effective way to represent structured knowledge. They are composed of entities (nodes) and relationships (edges) between those entities. KGs have been used in various tasks such as question answering, recommendation systems, and information retrieval.
 
-In the context of our work, preprocessing Wikipedia articles serves a specific purpose: determining the importance of triples in a knowledge graph. Knowledge graphs are powerful tools for representing complex relationships between entities, but they often lack information about the relative importance of each relationship. By preprocessing Wikipedia articles, we aim to derive importance scores for the edges in the graph, allowing us to better understand and prioritize the relationships between entities.
+\subsection{Limitations of Knowledge Graphs}
+Formally a knowledge graph $\mathcal{KG}$ can be defined as:
+\begin{equation*}
+  \mathcal{KG} = \{\mathcal{E}, \mathcal{R}, \mathcal{T}\}
+\end{equation*}
+where $\mathcal{E}$ is the set of entities (e.g. $\text{Einstein}, \text{Germany}, \text{Theory of Relativity}$) and $\mathcal{R}$ is the set of relations (e.g. $\text{born in}, \text{discovered}$). $\mathcal{T}$ is the set of triples in the form of $(h,r,t)$ with $h$ as head, $t$ as tail, and $r$ as relation, where $h,t \in \mathcal{E}$ and $r \in \mathcal{R}$. Thus for the fact ``Einstein is born in Germany'', $h = \text{Einstein}$, $r = \text{born}$, and $t = \text{Germany}$.
 
-In many existing knowledge graphs, such as YAGO, edge weights are used to represent confidence scores. These scores indicate the level of certainty that a given relationship exists, as determined by experts. While confidence scores are valuable for assessing the reliability of relationships, they do not necessarily reflect the importance of those relationships in the context of the overall graph or the domain being represented.
+If a knowledge graph is to be a proxy for how knowledge rests in the mind, then a knowledge graph --- specifically a knowledge graph triple --- is insufficient at representing factoids in the mind. Consider the example above with Einstein. The two facts ``Einstein is born in Germany'' and ``Einstein discovered theory of relativity'' are represented as triples in the knowledge graph. Yet consider that to a human mind, Einstein's discovery of theory of relativity is more ``important'' than his birthplace. Knowledge graph representation fails to capture the priority between these two factoids with which most humans would agree.
 
-Our preprocessing approach seeks to address this limitation by using Wikipedia articles as a rich source of information to assign importance scores to the triples in the knowledge graph. Since Wikipedia articles are curated by a large community of editors and follow a relatively consistent structure, they provide a solid foundation for estimating the importance of relationships between entities.
+An immediate counterpoint is the subjectivity of ``importance''. To some minds (perhaps a student studying the nationality of prominent scientists), Einstein's birthplace might be of greater importance than his discovery. Yet the subjective nature of the object of study should not completely discourage the study of it; rather, the difficulty should invite better methods to capture that information.
 
-By preprocessing Wikipedia articles, we can extract meaningful information about entities, their attributes, and their relationships, and use this information to compute importance scores for the edges in the knowledge graph. These scores can help us understand the relative significance of each relationship, facilitating more effective analysis, decision-making, and prioritization of resources in downstream applications.
+Besides, to the authors a knowledge graph as it stands is limited, and some notion of weights in relationships must exist in order to better represent knowledge itself.
 
-\section{Importance Scores}
+\subsection{Importance-augmented Knowledge Graph}
+Formally a weighted knowledge graph can be defined as:
+\begin{equation*}
+  \mathcal{WKG} = \{\mathcal{E}, \mathcal{R}, \mathcal{T}, f_w\}
+\end{equation*}
+where $\mathcal{E}, \mathcal{R}$ and $\mathcal{T}$ remain as in $\mathcal{KG}$, and $f_w : \mathcal{T} \to [0,1]$ is a function from KG triple to the associated weight.
 
-In this section, we will discuss the process of preprocessing Wikipedia articles and the method used to compute importance scores for the generated triples. Preprocessing involves parsing the HTML content of the article and extracting the links (using the \textit{href} attribute).
+A general method for incorporating weights for link prediction has been studied[CITE], yet most weights are confidence scores, i.e. measuring the uncertainty of the triple. We see confidence scores as helpful but ultimately uninteresting. Importance as weights are interesting but, as mentioned, perhaps difficult to study due to its subjective nature.
 
-For the importance scores, we use the position of the tail entity within the Wikipedia article as a proxy. Although this method has the disadvantage of not indicating the relation type, in most cases, there is one relation type between the head and tail entities. Therefore, the position of the tail entity is sufficient to determine the position of the "triple".
+\subsection{KG-BERT}
+In recent years, we have witnessed a meteoric rise of pre-trained language models (PLMs) like BERT. Trained on a very large corpus, PLMs have demonstrated ability to answer questions that require domain knowledge, leading many to hypothesize PLMs to have implicit representation of knowledge. Contrast this with knowledge graphs: PLM is a rich, implicit representation of knowledge whereas KG is a structured, explicit representation of knowledge.
+
+Several attempts have been made to combine the advantages of these two representations. Most notable attempt is KG-BERT, which performs several KG-specific tasks like link prediction, relation prediction, and triple classification using PLMs. Key idea is to convert knowledge graph triples into sequence of tokens, using the sequence as input tto the BERT model. KG-BERT has seen reasonable success, with some improvements made in PKGC.
+
+\subsection{Importance in LLMs}
+In the previous section we mentioned how PLM has a rich representation of knowledge. What is meant by a ``rich'' representation of knowledge? Let us consider a conversation with GPT-4, a recent LLM, shown in Figure \ref{img1}.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.7\textwidth]{einstein_gpt4.png}
+  \caption{Conversation with GPT-4 on Ordering Einstein Facts based on Importance}
+  \label{img1}
+\end{figure}
+
+We see in the conversation that GPT-4 attempts to order facts about Einstein based on importance. It also notes Einstein's discovery is more important than his birthplace. We can empirically note that GPT-4 can ``weight'' different relationships based on a notion of importance, whereas KGs are structurally incapable of such task. Thus it is plausible that if we want to create importance-augmented knowledge graphs, we can extract implicit knowledge in them for importance in triples.
+
+While no systematic inquiry has been made as to whether LLMs possess a robust implicit representation of importance of facts, we hypothesize that the success of LLMs imply a rich implicit representation, which serves as the motivation for our experiments.
+
+\subsection{Contributions}
+
+Therefore, we'd like to leverage PLMs in order to augment KGs with importance. In order to use PLMs, we must fine-tune it to our needs; unfortunately, there exist no publicly available knowledge graph datasets that label edges with importance. Thus we use Wikipedia articles as proxy for importance in a triple: specifically, given triple $(h,r,t)$, position of $t$ in the Wikipedia article of $h$ is used to approximate $f_w(h,r,t)$. Then a BERT model is fine-tuned on this data in order to approximate a general $f_w$ function.
+
+In this paper, we present a model that is capable of computing importance scores using Wikipedia as proxy for importance. This model is then used to augment an existing KG with several important scores for completeness.
+
+\section{Importance Score Extraction from Wikipedia}
+
+In this section, we will discuss the process of preprocessing Wikipedia articles and the method used to compute importance scores for the generated triples.
+
+\subsection{Motivation}
+
+Given a triple $(h,r,t)$, we wanted a dataset that gives us $w_{h,r,t}$ where $w_{h,r,t} = f_w(h,r,t)$. Yet as mentioned above, there are no publicly available datasets, so we have to generate $w_{h,r,t}$. Three sources that implicitly capture these relationships came to mind: LLMs, Google, and Wikipedia.
+
+\subsubsection{LLMs as Source}
+As demonstrated above with GPT-4, with proper prompting, we can extract information about importance of facts from LLMs. We however moved away from this approach for several reasons:
+
+\begin{enumerate}
+\item We prefer human-generated data as the baseline for training our model.
+\item Using data generated by LLM to fine-tune BERT seems unwise, and may exacerbate the biases.
+\item LLMs are computationally expensive to run inference, and this is an issue when there are triples on the order of a million. A simple backhand calculation: if we generate 1 token per second and each triple has 10 tokens on average, then generating data for 1M triples takes 10M seconds, which is near 4 months.
+\end{enumerate}
+
+\subsubsection{Google as Source}
+Let $T_{h,r,t}$ be the textual representation of triple $(h,r,t)$ e.g.
+\begin{equation*}
+  T_{\text{Albert\_Einstein}, \text{wasBornIn}, \text{Germany}} = \text{"Albert Einstein was born in Germany"}
+\end{equation*}
+
+Then the number of Google search results of $T_{h,r,t}$ can be used to compute $w_{h,r,t}$, with appropriate normalization. We see this approach as interesting, albeit with high variance and noise. We suggest the number of Google search results be used as a supplementary feature in future work.
+
+\subsubsection{Wikipedia as Source}
+When using Wikipedia as a source, we assume that earlier a fact shows in a Wikipedia article, more important the fact is. We see this assumption as being largely true, as Wikipedia articles are edited by humans with implicit goal of presenting relevant information. The assumption fails sometimes when, for instance, basic information (like birthplace) about a person is presented earlier than more critical information.
+
+Given a triple, we use the index of tail in the Wikipedia article of head in order to compute the importance score. There are different ways to index the tail, which we will go over in subsequent sections.
+
+\subsection{Dataset}
+
+We used YAGO3-10 (Yet Another Great Ontology 3-10) as the dataset. YAGO3-10 has 123,182 entities, 37 relations, and 1,179,040 triples (of which 1,079,040 we use for training). All entities are identifiers for Wikipedia articles. In order to remove variance in character count, we default to English Wikipedia. Because of this limitation and other issues like website access and inability to find the entity in a Wikipedia article, we could not use near 69.39\% of the data for training. Ultimately we have 330,248 triples, or 30.61\% of the original dataset for training.
+
+\subsection{Preprocessing Wikipedia Articles}
+
+Given triple $(h,r,t)$, let
+\begin{enumerate}
+\item $I_{h,t}$ be the link index of entity $t$ in the Wikipedia article of $h$. Link index here is the index of the entity in the ordered list of all entities in the article, in the order that they appear. We use the term link since named entities in Wikipedia articles link to the corresponding Wikipedia article.
+\item $I'_{h,t}$ be the link index of entity $t$ in the Wikipedia article of $h$, where infobox is ignored. Example of Infobox is shown in Figure \ref{img2}. Considering links in infobox can be a double-edged sword as sometimes useful entities are in infobox and not in the main article, but also infobox has a regular ordering that does not prioritize importance of facts.
+\item $C_{h,t}$ be the character index of the first character of entity $t$ in the Wikipedia article of $h$. Character index here is the number of characters in the article before the first character of entity.
+\end{enumerate}
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.3\textwidth]{einstein_infobox.png}
+  \caption{Wikipedia Infobox on Albert Einstein}
+  \label{img2}
+\end{figure}
+
+We first extract the position of the tail entity within the Wikipedia article as a proxy.
+
+Although this method has the disadvantage of not indicating the relation type, in most cases, there is one relation type between the head and tail entities. Therefore, the position of the tail entity is sufficient to determine the position of the "triple".
 
 We employ a power decay function for computing the importance scores:
 
 \begin{equation}
-  I(x) = \alpha^x
+      I(x) = \alpha^x
 \end{equation}
 
 where $I(x)$ is the importance score, $x$ is the position of the tail entity in the article, and $\alpha$ is a positive constant. The power decay function is chosen because it assigns higher importance to entities mentioned earlier in the article while still considering entities that appear later. This function reflects the intuition that earlier-mentioned entities are generally more important, but it allows for the possibility that later-mentioned entities can still be relevant.
@@ -100,60 +191,12 @@ An alternative approach for determining importance scores would have been to sea
 
 Another approach we could consider is to use the character position of the tail entity in the article rather than its position in the ordered list of links. This method would potentially provide a finer-grained measure of the entity's importance by taking into account its exact position in the text. However, it might be more susceptible to the influence of article structure and layout, which could introduce additional noise in the importance scores.
 
+\section{Suggested Future Work}
+\subsection{Google as Source}
+As mentioned above, we suggest using Google as an alternative way to enrichen a knowledge graph. Once controlled for its variance and erraticity, we believe this can be a useful feature to add to a knowledge graph.
 
-\section{Key Information to include}
-\begin{itemize}
-\item External collaborators: None
-\item External mentor: None
-\item Sharing project: N/A
-\end{itemize}
-
-\section{Background}
-A knowledge graph $\mathcal{KG}$ can be defined as:
-\begin{equation}
-  \mathcal{KG} = \{\mathcal{E}, \mathcal{R}, \mathcal{T}\}
-\end{equation}
-where $\mathcal{E}$ is the set of entities and $\mathcal{R}$ is the set of relations. $\mathcal{T}$ is the set of triples in the form of $(h,r,t)$ where head and tail $h,t \in \mathcal{E}$ and relation $r \in \mathcal{R}$.
-
-The task of Knowledge Graph Completion (KGC) is as follows: given relation $r$ and entities $h, t$, we label if $(h,r,t)$ is true.
-
-A weighted knowledge graph augments $\mathcal{R}$ such that $(h,r,t,w) \in \mathcal{R}$, where $w \in [0,1]$. $w$ is the weight of the relation. Thus given $h,r,t$ as before, weighted KGC estimates $w_{h,r,t}$.
-
-\section{Approach}
-We build upon KG-BERT\cite{https://doi.org/10.48550/arxiv.1909.03193} to support weighted knowledge graphs. We generate a weighted knowledge graph using DBpedia's NLP Interchange Format (NIF)\cite{DBLP:journals/corr/abs-1812-10315} which provides the full text along with the relations. Thus given head $h$, relation $r$, and tail $t$, let $f_{t,h}$ be the frequency of $t$ in the full text of $h$. Then we model the weight with the softmax function:
-\begin{equation}
-  w_{h,r,t} = \frac{\exp(f_{t,h})}{\sum_{t'} \exp(f_{t',h})}
-\end{equation}
-
-\section{Experiments}
-This section is expected to contain the following.
-\begin{itemize}
-\item \textbf{Data}: We are using WN11\cite{10.5555/2999611.2999715} (a subset of WordNet), FB13\cite{10.5555/2999792.2999923} (a subset of Freebase), and DBpedia. WN11 and FB13 are used for experimenting with KG-BERT, and DBpedia will be used to construct the data for weighted KGC.
-\item \textbf{Evaluation method}: The original KG-BERT uses Cross-Entropy Loss. In order to support continuous values, we use Mean-squared Error:
-  \begin{equation}
-    \mathcal{L} = \frac{1}{n} \sum_{i = 1}^n (y_i - \tilde{y}_i)^2
-  \end{equation}
-  where $y_i$ is the actual label and $\tilde{y}_i$ is the predicted label (i.e. weights of relation).
-\item \textbf{Experimental details}: As with KG-BERT, we chose pre-trained BERT-Base model with 12 layers, 12 self-attention heads, and $H = 768$ as initialization. This model is then fine-tuned with Adam implemented in BERT, where our approach differs from KG-BERT. We maintain the hyper-parameters in KG-BERT fine-tuning: batch size of 32, learning rate of 5e-5, and dropout rate of 0.1.
-
-\item \textbf{Results}: We are currently constructing the data from DBpedia, so in the meantime we converted the KG-BERT model to use regression. The following table is for WN11.
-
-  \begin{center}
-    \begin{tabular}{ |c|c|c|c| }
-      \hline
-      & KG-BERT & KG-BERT Modified & KG-BERT with regression \\
-      Evaluation Loss & 0.278 & 0.273 & 0.0585 \\
-      Accuracy & 93.1\% & 93.3\% & N/A  \\
-      \hline
-    \end{tabular}
-  \end{center}
-
-  where KG-BERT Modified adds a minor optimization where relations are converted to more humanlike language.
-\end{itemize}
-
-
-\section{Future work}
-We will test the regression model with data constructed from DBpedia using our weights construction. In addition, we will explore the techniques in PKGC paper\cite{lv-etal-2022-pre}.
+\subsection{Application to KG-BERT}
+Initially we sought to use the new representation in order to aid training KG-BERT. We hypothesize that a richer representation of knowledge graphs can help with tasks like link prediction. The computational complexity of these models, however, is very high (\href{https://github.com/yao8839836/kg-bert/issues/8}{taking weeks, up to a month on V100}), which is infeasible given allotted time and resources.
 
 \bibliographystyle{unsrt}
 \bibliography{references}

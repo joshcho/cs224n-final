@@ -17,6 +17,7 @@ struct InputRow {
 }
 
 fn main() {
+    // change these paths to create corresponding indices
     let file_path = "data/YAGO3-10/dev.tsv";
     let output_path = Path::new("output/dev_indices.tsv");
     let output_file = Arc::new(Mutex::new(File::create(output_path).unwrap()));
@@ -90,7 +91,7 @@ fn remove_aux(document: &mut Html) {
     let sections_to_remove = [
         "style",
         "link",
-        ".infobox",
+        ".infobox", // comment this out to get infobox
         ".shortdescription",
         ".sidebar",
         "#References",
