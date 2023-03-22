@@ -13,7 +13,7 @@ To use the IAKG project, follow these steps:
 - preprocess-rust/output/test\_indices.tsv
 - preprocess-rust/output/dev\_indices.tsv
 
-You can get these files from preprocess-rust directory, which is a Rust project that generates the indices using Wikipedia. You can download YAGO3-10 from [[https://huggingface.co/datasets/VLyb/YAGO3-10][HuggingFace]].
+You can get these files from preprocess-rust directory, which is a Rust project that generates the indices using Wikipedia. You can download YAGO3-10 from [HuggingFace](https://huggingface.co/datasets/VLyb/YAGO3-10).
 
 Train or load models using the main.py script. Use the following command-line arguments:
 

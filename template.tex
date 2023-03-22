@@ -74,10 +74,10 @@ Formally a weighted knowledge graph can be defined as:
 \end{equation*}
 where $\mathcal{E}, \mathcal{R}$ and $\mathcal{T}$ remain as in $\mathcal{KG}$, and $f_w : \mathcal{T} \to [0,1]$ is a function from KG triple to the associated weight.
 
-A general method for incorporating weights for link prediction has been studied[CITE], yet most weights are confidence scores, i.e. measuring the uncertainty of the triple. We see confidence scores as helpful but ultimately uninteresting. Importance as weights are interesting but, as mentioned, perhaps difficult to study due to its subjective nature.
+A general method for incorporating weights for link prediction has been studied\cite{nayyeri2021link}, yet most weights are confidence scores, i.e. measuring the uncertainty of the triple. We see confidence scores as helpful but ultimately uninteresting. Importance as weights are interesting but, as mentioned, perhaps difficult to study due to its subjective nature.
 
-\subsection{KG-BERT}
-In recent years, we have witnessed a meteoric rise of pre-trained language models (PLMs) like BERT. Trained on a very large corpus, PLMs have demonstrated ability to answer questions that require domain knowledge, leading many to hypothesize PLMs to have implicit representation of knowledge. Contrast this with knowledge graphs: PLM is a rich, implicit representation of knowledge whereas KG is a structured, explicit representation of knowledge.
+\subsection{KG-BERT\cite{https://doi.org/10.48550/arxiv.1909.03193}}
+In recent years, we have witnessed a meteoric rise of pre-trained language models (PLMs) like BERT\cite{devlin-etal-2019-bert}. Trained on a very large corpus, PLMs have demonstrated ability to answer questions that require domain knowledge, leading many to hypothesize PLMs to have implicit representation of knowledge. Contrast this with knowledge graphs: PLM is a rich, implicit representation of knowledge whereas KG is a structured, explicit representation of knowledge.
 
 Several attempts have been made to combine the advantages of these two representations. Most notable attempt is KG-BERT, which performs several KG-specific tasks like link prediction, relation prediction, and triple classification using PLMs. Key idea is to convert knowledge graph triples into sequence of tokens, using the sequence as input tto the BERT model. KG-BERT has seen reasonable success, with some improvements made in PKGC.
 
@@ -151,45 +151,72 @@ Given triple $(h,r,t)$, let
   \label{img2}
 \end{figure}
 
-We first extract the position of the tail entity within the Wikipedia article as a proxy.
+\subsubsection{Limitations}
 
-Although this method has the disadvantage of not indicating the relation type, in most cases, there is one relation type between the head and tail entities. Therefore, the position of the tail entity is sufficient to determine the position of the "triple".
+Note how this method does not take the relation type into account. Even though the relation type is an important matter, we assumed that given head $h$ and tail $t$, in most instances, there is one type of relation between $h$ and $t$. The mention of $t$ in an article of $h$ will imply $t$ is being mentioned in the context of that one type of relation. Thus the index of $t$ is sufficient to determine the position of the ``triple''.
 
-We employ a power decay function for computing the importance scores:
+\subsubsection{Power Decay}
+
+Given an index, we use a power decay function to normalize to a real-value between 0 and 1:
 
 \begin{equation}
-      I(x) = \alpha^x
+  s(x) = \alpha^x
 \end{equation}
 
-where $I(x)$ is the importance score, $x$ is the position of the tail entity in the article, and $\alpha$ is a positive constant. The power decay function is chosen because it assigns higher importance to entities mentioned earlier in the article while still considering entities that appear later. This function reflects the intuition that earlier-mentioned entities are generally more important, but it allows for the possibility that later-mentioned entities can still be relevant.
+where $s(x)$ is the importance score, $x$ is the position of the tail entity in the article, and $\alpha$ is a positive constant. The power decay function is chosen because it assigns higher importance to entities mentioned earlier in the article while still considering entities that appear later. This function reflects the intuition that earlier-mentioned entities are generally more important, but it allows for the possibility that later-mentioned entities can still be relevant. For $I_{h,t}$ and $I'_{h,t}$, $\alpha$ of 0.95 is chosen. For $C_{h,t}$, $\alpha$ of 0.999 is chosen. The decay rates are chosen based on the magnitude of these values; note that $C_{h,t}$ will be much larger than the other two indices.
 
-We consider the scenario of preprocessing a Wikipedia article on BERT and computing the positions and importance scores for the triples. This will illustrate the considerations to make when choosing an importance function. We will parse the HTML content and extract the links with appropriate Wikipedia \textit{href} attributes. Table \ref{table:1} shows the triples, their positions, and the importance scores calculated using the power decay function using $\alpha = 0.99$.
+\section{Experiments}
+The goal is to train a BERT model in order to fully complete a knowledge graph with importance weights. As mentioned above, 69.39\% of the data for YAGO3-10 training dataset do not have weights attached to them. Thus for proper imputation of data, we need to train an appropriate model.
 
-\begin{table}[h]
-  \label{table:1}
+\subsection{Methods}
+Given $h,r,t \in \mathcal{E}$ and $I \in \{I_{h,t}, I'_{h,t}, C_{h,t}\}$, the method is as follows:
+\begin{enumerate}
+\item Convert $(h,r,t)$ to a sequence of tokens, using \texttt{relation2text.txt} for $r$.
+\item Let the sequence of tokens be the input to BERT sequence classification model, with the output as a single label $I$.
+\item Use MSE as the loss function and AdamW optimizer for training.
+\end{enumerate}
+
+In order to aid training, we preprocessed the Wikipedia data so that $I \in [0,1]$. 1,079,040 triples were used in the train dataset, and 50,000 triples were used for dev and test datasets each. We used BERT and RoBERTa\cite{https://doi.org/10.48550/arxiv.1907.11692} as the BERT models, learning rate of 1E-5, and 3 epochs.
+
+\subsection{Results}
+
+We see the results laid out in Table \ref{t1}. Notably, even though $I_{h,t}$ and $I'_{h,t}$ used the same decay rate, we see that the PLMs are much better able to learn $I_{h,t}$. The reason for this is because $I_{h,t}$ includes the infobox, which leads to much more regular patterns in the importance scores of certain triples.
+
+\begin{table}
   \centering
-  \begin{tabular}{|c|c|c|}
+  \begin{tabular}{||c c c c||}
     \hline
-    Triple & Position & Importance Score \\
+      & $I_{h,t}$ & $I'_{h,t}$ & $C_{h,t}$ \\ [0.5ex]
+    \hline\hline
+    BERT Train Loss (Last Epoch) & 0.028 & 0.070 & 0.062 \\
     \hline
-    (BERT, language\_model, Language model) & 1 & $0.99^{1} \approx 0.99$ \\
-    (BERT, publisher, Google) & 2 & $0.99^{2} \approx 0.9801$ \\
-    (BERT, related\_work, BookCorpus) & 6 & $0.99^{6} \approx 0.9412$ \\
-    (BERT, related\_work, English Wikipedia) & 7 & $0.99^{7} \approx 0.9321$ \\
-    (BERT, based\_on, Transformer) & 9 & $0.99^{9} \approx 0.9135$ \\
+    BERT Test Loss  & 0.030 & 0.061 & 0.058 \\
+    \hline
+    RoBERTa Train Loss (Last Epoch)  & [FILL] & 0.074 & 0.066 \\
+    \hline
+    RoBERTa Test Loss  & [FILL] & 0.059 & 0.062 \\
     \hline
   \end{tabular}
-
-  \caption{Positions and Importance Scores for Triples in the BERT Article}
+  \caption{Results for BERT and RoBERTa}
+  \label{t1}
 \end{table}
 
-Upon examining the example, we notice that the importance scores may not accurately reflect the significance of certain entities. For instance, the fact that BERT was trained on BookCorpus and English Wikipedia might be considered less important than the fact that BERT is based on the Transformer architecture. This observation suggests that the structure of Wikipedia articles may affect the computed importance scores, as entities mentioned towards the end of a section could be less important than entities mentioned at the beginning of the next section.
+There are several limitations to the result:
+\begin{enumerate}
+\item It is difficult to tell how good these losses are without having human-labeled data to validate our model. We are assuming that the Wikipedia positions are a good proxy, but when evaluating the results, it is difficult to tell.
+\item Wikipedia has many relationships, whereas YAGO3-10 is a subset of these relationships. The low discrepancy between train and test losses evidence low possibility of overfitting, but this may be due to the limitation of the dataset.
+\end{enumerate}
 
-To address this issue, we could modify the importance scoring method to assign higher importance to entities appearing earlier within a section. One possible approach is to combine the power decay function with an additional weighting factor that takes into account the section's position in the article. This way, we can better capture the significance of entities and their relative importance within each section.
+Despite these limitations, however, we show that pre-trained language models can learn non-trivial relationships between the ``importance'' and the triple.
 
-An alternative approach for determining importance scores would have been to search for raw text within the article. This method has its own set of advantages, such as being able to identify entities that might not be linked or entities that have different display text. However, this approach can be computationally more expensive, and it may not account for the variability in display text used for the same entity.
+\subsection{Importance-augmented Knowledge Graph}
+In the \href{https://github.com/joshcho/cs224n-final}{code} that we have provided, we have provided a means of generating importance scores from a knowledge graph. We do this by
+\begin{enumerate}
+\item Given triple $(h,r,t)$, if $t$ can be found within article of $h$, use the appropriate index for computing importance score.
+\item If no $t$ can be found, then use the model we trained in order to generate the importance score, thereby imputing the data.
+\end{enumerate}
 
-Another approach we could consider is to use the character position of the tail entity in the article rather than its position in the ordered list of links. This method would potentially provide a finer-grained measure of the entity's importance by taking into account its exact position in the text. However, it might be more susceptible to the influence of article structure and layout, which could introduce additional noise in the importance scores.
+Thus the result of imputation is a six-column tsv file with head, relation, tail, $I_{h,t}$, $I'_{h,t}$, and $C_{h,t}$. We hope that this dataset can act as a rich augmentation of knowledge graphs enabled by PLMs.
 
 \section{Suggested Future Work}
 \subsection{Google as Source}
@@ -197,6 +224,13 @@ As mentioned above, we suggest using Google as an alternative way to enrichen a 
 
 \subsection{Application to KG-BERT}
 Initially we sought to use the new representation in order to aid training KG-BERT. We hypothesize that a richer representation of knowledge graphs can help with tasks like link prediction. The computational complexity of these models, however, is very high (\href{https://github.com/yao8839836/kg-bert/issues/8}{taking weeks, up to a month on V100}), which is infeasible given allotted time and resources.
+
+\section{Conclusion}
+In this paper, we explored the problem of assigning importance scores to triples in a knowledge graph. We proposed a novel approach by leveraging Wikipedia articles and preprocessing techniques to extract importance scores. Our assumption was that the position of a fact within a Wikipedia article is indicative of its importance. We employed BERT and RoBERTa models to predict importance scores based on the extracted data.
+
+While our approach has shown promise, there is room for improvement. Future work could include using the number of Google search results as a supplementary feature, taking the relation type into account, and exploring different decay functions for normalizing the importance scores. Additionally, the performance of the models can be further enhanced by experimenting with other pre-trained language models, more sophisticated techniques for text processing, and refining the hyperparameters.
+
+In conclusion, our approach demonstrates a viable way to extract and predict importance scores for knowledge graph triples using large language models and Wikipedia articles. This work paves the way for refining and expanding knowledge graphs, enriching explicit knowledge representations.
 
 \bibliographystyle{unsrt}
 \bibliography{references}
