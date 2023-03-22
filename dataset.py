@@ -4,7 +4,7 @@ from utils import power_decay
 
 class TripleDataset(Dataset):
     def __init__(self, tsv_file, relation2text_file, tokenizer):
-        self.df = pd.read_csv(tsv_file, sep='\t', header=None, names=['head', 'relation', 'tail'])
+        self.df = pd.read_csv(tsv_file, sep='\t', header=None, usecols=[0, 1, 2], names=['head', 'relation', 'tail'])
         self.relation2text = pd.read_csv(relation2text_file, sep='\t', header=None, names=['relation', 'text']).set_index('relation')['text'].to_dict()
         self.tokenizer = tokenizer
 
@@ -25,7 +25,6 @@ class TripleImportanceDataset(Dataset):
     def __init__(self, tsv_file, relation2text_file, tokenizer, decay_factor, importance_column):
         self.df = pd.read_csv(tsv_file, sep='\t', header=None, names=['head', 'relation', 'tail', 'index', 'char-index'])
         self.df = self.df[(self.df['index'] != -1) & (self.df['index'] != -2)]
-        # print(self.df['importance'].mean())
         self.relation2text = pd.read_csv(relation2text_file, sep='\t', header=None, names=['relation', 'text']).set_index('relation')['text'].to_dict()
         self.tokenizer = tokenizer
         self.decay_factor = decay_factor

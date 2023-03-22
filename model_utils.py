@@ -1,7 +1,7 @@
 import torch
 from tqdm import tqdm
 from torch.utils.data import DataLoader
-from transformers import AdamW
+from torch.optim import AdamW
 
 def train(model, loader, device, optimizer):
     model.train()
